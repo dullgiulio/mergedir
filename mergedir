@@ -1,0 +1,26 @@
+#!/bin/bash
+
+SRC="$1"
+DEST="$2"
+
+find "$SRC" -type d | sed -r "s#^$SRC##" | while read d; do
+	DESTD=$(realpath -m "$DEST/$d")
+	if [ -e "$DESTD" ] && [ ! -d "$DESTD" ]; then
+		echo "fatal: $DESTD exists and is not a directory" >&2
+		exit 1
+	fi
+	mkdir -p "$DESTD"
+done
+
+find "$SRC" -type f | sed -r "s#^$SRC##" | while read f; do
+	DESTF=$(realpath -m "$DEST/$f")
+	SRCF=$(realpath -m "$SRC/$f")
+	if [ -e "$DESTF" ]; then
+		TYPE=`file -b --mime-type "$SRCF" | cut -d/ -f1`
+		if [ "$TYPE" = 'text' ]; then
+			cat "$SRCF" >>"$DESTF"  
+		fi
+	else
+		cp "$SRCF" "$DESTF"
+	fi
+done
